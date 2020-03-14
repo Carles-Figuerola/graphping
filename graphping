@@ -35,19 +35,19 @@ import datetime
 from pprint import pprint, pformat
 
 # number of ping packets to send
-packets = 30
+packets = 20
 
 # Graphite
-g_host = 'localhost'
+g_host = '192.168.11.102'
 g_port = 2003
 g_prefix = 'ping'
 
 # System
-fping = '/usr/sbin/fping'
+fping = '/usr/bin/fping'
 logfile = '/tmp/graphping.log'
 
 def handle_signal (sig, _frame):
-    signals = dict((k, v) for v, k in signal.__dict__.iteritems() if v.startswith('SIG'))
+    signals = dict((k, v) for v, k in signal.__dict__.items() if v.startswith('SIG'))
     app.logger.info ("Received signal (%s)" % signals[sig])
 
     if sig == signal.SIGUSR1:
@@ -84,19 +84,19 @@ class App:
         self.g_port = g_port
         self.g_prefix = g_prefix
         self.logfile = logfile
-        self.daemonize = True
+        self.daemonize = False
         self.stop = False
-        self.level = logging.INFO
+        self.level = logging.DEBUG
 
     def setup_logging(self):
-        os.umask(022)
+        os.umask(0o022)
         self.logger = logging.getLogger()
         self.logger.setLevel(self.level)
         formatter = logging.Formatter('%(asctime)s [%(process)d] %(levelname)s: %(message)s','%Y-%m-%d %H:%M:%S')
         try:
             loghandler = logging.handlers.WatchedFileHandler(self.logfile)
         except IOError:
-            print "Could not open logfile (%s)" % self.logfile
+            print("Could not open logfile (%s)" % self.logfile)
             return False
 
         loghandler.setFormatter(formatter)
@@ -129,7 +129,7 @@ class App:
             self.usage()
 
     def usage(self):
-        print "Usage: ping-graphite <target> [<target> ...]"
+        print("Usage: ping-graphite <target> [<target> ...]")
         sys.exit(2)
 
     def main(self):
@@ -152,7 +152,7 @@ class App:
                     # handle gracefully
                     try:
                         raw_line = self.ping.stdout.readline()
-                    except IOError, e:
+                    except IOError as e:
                         if e.errno == errno.EINTR:
                             continue
 
@@ -160,7 +160,7 @@ class App:
                     if raw_line == '':
                         break
 
-                    l = raw_line.rstrip()
+                    l = raw_line.rstrip().decode('ascii')
 
                     # latinum : [0], 84 bytes, 6.46 ms (6.46 avg, 0% loss)
                     m = re.match('([^ ]*)\s* : \[\d+\]+, \d+ bytes, (.*) ms', l)
